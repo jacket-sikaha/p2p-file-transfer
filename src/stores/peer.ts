@@ -1,0 +1,160 @@
+import { ref, computed } from 'vue'
+import { defineStore } from 'pinia'
+import Peer, { DataConnection, PeerError, PeerErrorType } from 'peerjs'
+import { ElMessage } from 'element-plus'
+
+export enum DataType {
+  FILE = 'FILE',
+  OTHER = 'OTHER',
+}
+export interface Data {
+  dataType: DataType
+  file?: Blob
+  fileName?: string
+  fileType?: string
+  message?: string
+}
+
+export const usePeerStore = defineStore('peer', () => {
+  const p = ref<Peer | undefined>(undefined)
+  const peerId = computed(() => p.value?.id)
+  const { value: connectionMap } = ref(new Map<string, DataConnection>())
+  const startPeerSession = () =>
+    new Promise((resolve, reject) => {
+      try {
+        p.value = new Peer()
+        p.value
+          .on('open', (id) => {
+            console.log('My ID: ' + id)
+            resolve(id)
+          })
+          .on('error', (err) => {
+            reject(err)
+          })
+      } catch (err) {
+        console.error(err)
+        reject(err)
+      }
+    })
+
+  const closePeerSession = async () => {
+    try {
+      if (p.value) {
+        p.value.destroy()
+        p.value = undefined
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const connectPeer = (id: string) => {
+    const peer = p.value
+    if (!peer || connectionMap.has(id)) {
+      return
+    }
+
+    try {
+      const conn = peer.connect(id, { reliable: true })
+      if (!conn) {
+        return
+      }
+      conn
+        .on('open', function () {
+          console.log('Connect to: ' + id)
+          connectionMap.set(id, conn)
+          peer?.removeListener('error', handlePeerError)
+        })
+        .on('error', function (err) {
+          peer?.removeListener('error', handlePeerError)
+          throw err
+        })
+
+      const handlePeerError = (err: PeerError<`${PeerErrorType}`>) => {
+        if (err.type === 'peer-unavailable') {
+          const messageSplit = err.message.split(' ')
+          const peerId = messageSplit[messageSplit.length - 1]
+          if (id === peerId) reject(err)
+        }
+      }
+      peer.on('error', handlePeerError)
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const onIncomingConnection = (callback: (conn: DataConnection) => void) => {
+    p.value?.on('connection', function (conn) {
+      console.log('Incoming connection: ' + conn.peer)
+      connectionMap.set(conn.peer, conn)
+      callback(conn)
+    })
+  }
+
+  const onConnectionDisconnected = (id: string, callback: () => void) => {
+    if (!p.value) {
+      throw new Error("Peer doesn't start yet")
+    }
+    if (!connectionMap.has(id)) {
+      throw new Error("Connection didn't exist")
+    }
+    const conn = connectionMap.get(id)
+    if (conn) {
+      conn.on('close', function () {
+        console.log('Connection closed: ' + id)
+        connectionMap.delete(id)
+        callback()
+      })
+    }
+  }
+  const sendConnection = (id: string, data: Data): Promise<void> =>
+    new Promise((resolve, reject) => {
+      if (!connectionMap.has(id)) {
+        reject(new Error("Connection didn't exist"))
+      }
+      try {
+        const conn = connectionMap.get(id)
+        if (conn) {
+          conn.send(data)
+        }
+      } catch (err) {
+        reject(err)
+      }
+      resolve()
+    })
+  const onConnectionReceiveData = (id: string, callback: (f: Data) => void) => {
+    if (!p.value) {
+      throw new Error("Peer doesn't start yet")
+    }
+    if (!connectionMap.has(id)) {
+      throw new Error("Connection didn't exist")
+    }
+    const conn = connectionMap.get(id)
+    if (conn) {
+      conn.on('data', function (receivedData) {
+        console.log('Receiving data from ' + id)
+        const data = receivedData as Data
+        callback(data)
+      })
+    }
+  }
+
+  const startPeer = async () => {
+    const id = await startPeerSession()
+    onIncomingConnection((conn) => {
+      const peerId = conn.peer
+      ElMessage.info('Incoming connection: ' + peerId)
+      // dispatch(addConnectionList(peerId))
+      onConnectionDisconnected(peerId, () => {
+        ElMessage.info('Connection closed: ' + peerId)
+        // dispatch(removeConnectionList(peerId))
+      })
+      onConnectionReceiveData(peerId, (file) => {
+        ElMessage.info('Receiving file ' + file.fileName + ' from ' + peerId)
+        if (file.dataType === DataType.FILE) {
+          // download(file.file || '', file.fileName || "fileName", file.fileType)
+        }
+      })
+    })
+  }
+})
