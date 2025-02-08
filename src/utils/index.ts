@@ -1,4 +1,5 @@
 import Peer from 'peerjs'
+import { toDataURL } from 'qrcode'
 import { ref } from 'vue'
 import { useRoute } from 'vue-router'
 
@@ -31,4 +32,16 @@ export function downloadBlob(blob: Blob, filename: string): void {
     URL.revokeObjectURL(url)
     document.body.removeChild(link)
   }, 100)
+}
+
+export const toQRCodeDataURL = async (text: string) => {
+  const opts = {
+    errorCorrectionLevel: 'H',
+    type: 'image/jpeg',
+    quality: 0.3,
+    margin: 1,
+  }
+  const canvas = document.createElement('canvas')
+
+  return await toDataURL(canvas, text, opts)
 }

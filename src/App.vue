@@ -12,7 +12,7 @@
     <el-menu-item index="2"><RouterLink to="/about">file</RouterLink></el-menu-item>
   </el-menu>
 
-  <RouterView />
+  <div class="m-6"><RouterView /></div>
 </template>
 
 <script setup lang="ts">
