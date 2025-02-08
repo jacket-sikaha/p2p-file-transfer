@@ -1,7 +1,8 @@
-import { ref, computed } from 'vue'
-import { defineStore } from 'pinia'
-import Peer, { DataConnection, PeerError, PeerErrorType } from 'peerjs'
 import { ElMessage } from 'element-plus'
+import type { DataConnection, PeerError, PeerErrorType } from 'peerjs'
+import Peer from 'peerjs'
+import { defineStore } from 'pinia'
+import { ref } from 'vue'
 
 export enum DataType {
   FILE = 'FILE',
@@ -17,15 +18,18 @@ export interface Data {
 
 export const usePeerStore = defineStore('peer', () => {
   const p = ref<Peer | undefined>(undefined)
-  const peerId = computed(() => p.value?.id)
+  const peerId = ref<string>()
   const { value: connectionMap } = ref(new Map<string, DataConnection>())
   const startPeerSession = () =>
-    new Promise((resolve, reject) => {
+    new Promise(async (resolve, reject) => {
       try {
-        p.value = new Peer()
-        p.value
+        const tmp = new Peer()
+        tmp
           .on('open', (id) => {
             console.log('My ID: ' + id)
+            // 貌似peer在连接时候里面属性的更新ref无法监听到，直接借助回调来手动更新peer
+            p.value = tmp
+            peerId.value = id
             resolve(id)
           })
           .on('error', (err) => {
@@ -74,7 +78,7 @@ export const usePeerStore = defineStore('peer', () => {
         if (err.type === 'peer-unavailable') {
           const messageSplit = err.message.split(' ')
           const peerId = messageSplit[messageSplit.length - 1]
-          if (id === peerId) reject(err)
+          ElMessage.error('Peer ' + peerId + ' is not available')
         }
       }
       peer.on('error', handlePeerError)
@@ -140,21 +144,34 @@ export const usePeerStore = defineStore('peer', () => {
   }
 
   const startPeer = async () => {
-    const id = await startPeerSession()
-    onIncomingConnection((conn) => {
-      const peerId = conn.peer
-      ElMessage.info('Incoming connection: ' + peerId)
-      // dispatch(addConnectionList(peerId))
-      onConnectionDisconnected(peerId, () => {
-        ElMessage.info('Connection closed: ' + peerId)
-        // dispatch(removeConnectionList(peerId))
+    try {
+      const id = await startPeerSession()
+      onIncomingConnection((conn) => {
+        const peerId = conn.peer
+        ElMessage.info('Incoming connection: ' + peerId)
+        // dispatch(addConnectionList(peerId))
+        onConnectionDisconnected(peerId, () => {
+          ElMessage.info('Connection closed: ' + peerId)
+          // dispatch(removeConnectionList(peerId))
+        })
+        onConnectionReceiveData(peerId, (file) => {
+          ElMessage.info('Receiving file ' + file.fileName + ' from ' + peerId)
+          if (file.dataType === DataType.FILE) {
+            // download(file.file || '', file.fileName || "fileName", file.fileType)
+          }
+        })
       })
-      onConnectionReceiveData(peerId, (file) => {
-        ElMessage.info('Receiving file ' + file.fileName + ' from ' + peerId)
-        if (file.dataType === DataType.FILE) {
-          // download(file.file || '', file.fileName || "fileName", file.fileType)
-        }
-      })
-    })
+    } catch (err) {
+      ElMessage.error('Failed to initialize peer connection')
+    }
+  }
+
+  return {
+    peer: p,
+    peerId,
+    closePeerSession,
+    connectPeer,
+    sendConnection,
+    startPeer,
   }
 })
