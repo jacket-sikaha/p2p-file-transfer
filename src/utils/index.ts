@@ -1,11 +1,12 @@
-import Peer from 'peerjs'
 import { toDataURL } from 'qrcode'
-import { ref } from 'vue'
 import { useRoute } from 'vue-router'
 
-export const makeQRCode = () => {
+export const handleQRCode = () => {
+  // useRoute 是一个 Composition API 钩子函数，它只能在组件的 setup 函数或 <script setup> 中使用
   const route = useRoute()
+  return route.query.id as string
 }
+
 /**
  * 触发文件下载（针对 Blob 类型）
  * @param blob Blob 数据

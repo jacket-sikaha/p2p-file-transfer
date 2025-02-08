@@ -35,29 +35,55 @@
       </div>
       <template #footer>
         <p class="font-bold text-lg">Connection</p>
-        <el-tag class="m-3" type="success" size="large" effect="dark">Tag 2</el-tag>
+        <el-tag
+          :key="key"
+          v-for="key in connectionKey"
+          class="m-3"
+          type="primary"
+          size="large"
+          effect="dark"
+          >{{ key }}</el-tag
+        >
       </template>
     </el-card>
   </div>
 </template>
 <script setup lang="ts">
 import { usePeerStore } from '@/stores/peer'
-import { toQRCodeDataURL } from '@/utils'
+import { handleQRCode, toQRCodeDataURL } from '@/utils'
 import { storeToRefs } from 'pinia'
-import { computed, onMounted, ref, useTemplateRef } from 'vue'
-
+import { computed, onMounted, onUnmounted, ref, useTemplateRef } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+const route = useRoute()
+const router = useRouter()
 const store = usePeerStore()
-const { startPeer } = store
-const { peerId, peer } = storeToRefs(store)
+const { startPeer, connectPeer, closePeerSession } = store
+const { peerId, peer, connectionMap } = storeToRefs(store)
 const loading = ref(false)
 const img = ref('')
 const shareLink = computed(() => {
   return `${window.location.origin}?id=${peerId.value}`
 })
+const connectionKey = computed(() => {
+  const res = [...connectionMap.value.keys()]
+  return res.length ? res : ['No Connection']
+})
+
 onMounted(async () => {
   loading.value = true
   await startPeer()
   img.value = (await toQRCodeDataURL(shareLink.value)) as unknown as string
   loading.value = false
+  if (route.query.id) {
+    connectPeer(route.query.id as string)
+    router.replace({
+      query: {},
+    })
+  }
+  console.log('route.query:', route.query.id as string)
+})
+
+onUnmounted(() => {
+  closePeerSession()
 })
 </script>

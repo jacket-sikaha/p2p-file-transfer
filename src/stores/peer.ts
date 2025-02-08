@@ -1,3 +1,4 @@
+import { handleQRCode } from '@/utils'
 import { ElMessage } from 'element-plus'
 import type { DataConnection, PeerError, PeerErrorType } from 'peerjs'
 import Peer from 'peerjs'
@@ -19,7 +20,9 @@ export interface Data {
 export const usePeerStore = defineStore('peer', () => {
   const p = ref<Peer | undefined>(undefined)
   const peerId = ref<string>()
-  const { value: connectionMap } = ref(new Map<string, DataConnection>())
+  const cmap = ref(new Map<string, DataConnection>())
+  const connectionMap = cmap.value
+
   const startPeerSession = () =>
     new Promise(async (resolve, reject) => {
       try {
@@ -145,10 +148,10 @@ export const usePeerStore = defineStore('peer', () => {
 
   const startPeer = async () => {
     try {
-      const id = await startPeerSession()
+      await closePeerSession()
+      const myId = await startPeerSession()
       onIncomingConnection((conn) => {
         const peerId = conn.peer
-        ElMessage.info('Incoming connection: ' + peerId)
         // dispatch(addConnectionList(peerId))
         onConnectionDisconnected(peerId, () => {
           ElMessage.info('Connection closed: ' + peerId)
@@ -169,6 +172,7 @@ export const usePeerStore = defineStore('peer', () => {
   return {
     peer: p,
     peerId,
+    connectionMap,
     closePeerSession,
     connectPeer,
     sendConnection,
