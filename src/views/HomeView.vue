@@ -50,9 +50,9 @@
 </template>
 <script setup lang="ts">
 import { usePeerStore } from '@/stores/peer'
-import { handleQRCode, toQRCodeDataURL } from '@/utils'
+import { toQRCodeDataURL } from '@/utils'
 import { storeToRefs } from 'pinia'
-import { computed, onMounted, onUnmounted, ref, useTemplateRef } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 const route = useRoute()
 const router = useRouter()

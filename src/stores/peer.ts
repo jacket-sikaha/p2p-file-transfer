@@ -114,7 +114,7 @@ export const usePeerStore = defineStore('peer', () => {
       })
     }
   }
-  const sendConnection = (id: string, data: Data): Promise<void> =>
+  const sendData = (id: string, data: Data): Promise<void> =>
     new Promise((resolve, reject) => {
       if (!connectionMap.has(id)) {
         reject(new Error("Connection didn't exist"))
@@ -175,7 +175,7 @@ export const usePeerStore = defineStore('peer', () => {
     connectionMap,
     closePeerSession,
     connectPeer,
-    sendConnection,
+    sendData,
     startPeer,
   }
 })
