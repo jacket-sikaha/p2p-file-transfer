@@ -14,6 +14,7 @@ export interface Data {
   file?: Blob
   fileName?: string
   fileType?: string
+  size?: number
   message?: string
   from: string
 }
@@ -47,7 +48,11 @@ export const usePeerStore = defineStore('peer', () => {
 
   const closePeerSession = async () => {
     try {
+      console.log('closePeerSession---------------------')
       if (p.value) {
+        cmap.value.values().forEach((conn) => {
+          conn.close()
+        })
         p.value.destroy()
         p.value = undefined
       }
@@ -118,7 +123,7 @@ export const usePeerStore = defineStore('peer', () => {
       })
     }
   }
-  const sendData = (id: string, data: Data): Promise<void> =>
+  const sendData = (id: string, data: Data): Promise<string> =>
     new Promise((resolve, reject) => {
       if (!connectionMap.has(id)) {
         reject(new Error("Connection didn't exist"))
@@ -131,7 +136,7 @@ export const usePeerStore = defineStore('peer', () => {
       } catch (err) {
         reject(err)
       }
-      resolve()
+      resolve(id)
     })
   const onConnectionReceiveData = (id: string, callback: (f: Data) => void) => {
     if (!p.value) {

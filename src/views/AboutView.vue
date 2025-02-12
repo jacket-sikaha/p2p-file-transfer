@@ -1,9 +1,27 @@
 <template>
   <div class="flex flex-col gap-2 items-center">
+    <el-card class="w-full" style="max-width: 40rem">
+      <template #header>
+        <div class="card-header">
+          <span class="font-bold text-lg">选择发送方</span>
+        </div>
+      </template>
+      <div>send to：{{ selPid }}</div>
+      <el-select v-model="selPid" placeholder="Select" style="width: 240px">
+        <el-option
+          v-for="item in connectionKeyOpt"
+          :key="item.value"
+          :label="item.label"
+          :value="item.value"
+        />
+      </el-select>
+    </el-card>
+
     <el-upload
       class="w-full max-w-72"
       drag
       multiple
+      ref="uploadRef"
       v-model:file-list="fileList"
       :http-request="upload"
       :limit="3"
@@ -22,35 +40,69 @@
           <span class="font-bold text-lg">ReceiveData</span>
         </div>
       </template>
-      <div className="flex items-center space-x-4 rounded-md border p-4">
+      <div
+        :key="item.id"
+        v-for="item in downloadFiles"
+        className="flex items-center space-x-4 rounded-md border p-4"
+      >
         <el-icon><Bell /></el-icon>
-        <div className="flex-1 space-y-1">
-          <p className="text-sm font-medium leading-none">Push Notifications</p>
-          <p className="text-sm text-[#a1a1aa]">Send notifications to device.</p>
+        <div className="flex-1 flex justify-between gap-2 items-center space-y-1">
+          <!-- 对于连续不带空格的字符串，需要添加break-all才能换行 -->
+          <div class="text-pretty break-all">
+            <p className="text-sm font-medium">{{ item.fileName }}</p>
+            <p className="text-sm text-[#a1a1aa]">{{ formatBytes(item.size ?? 0) }}</p>
+            <p className="text-sm text-[#a1a1aa]">from {{ item.from }}</p>
+          </div>
+          <el-button type="primary"
+            ><el-icon><Download /></el-icon
+          ></el-button>
         </div>
-        <el-button type="primary">Primary</el-button>
       </div>
     </el-card>
   </div>
 </template>
 
 <script setup lang="ts">
-import { usePeerStore } from '@/stores/peer'
+import { useDownloadFilesStore } from '@/stores/file'
+import { DataType, usePeerStore } from '@/stores/peer'
+import { formatBytes } from '@/utils'
 import { UploadFilled } from '@element-plus/icons-vue'
-import { ElMessage, type UploadRawFile, type UploadRequestOptions } from 'element-plus'
+import { type UploadRequestOptions, type UploadUserFile } from 'element-plus'
 import { UploadAjaxError } from 'element-plus/es/components/upload/src/ajax.mjs'
 import { storeToRefs } from 'pinia'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 
 const store = usePeerStore()
+const downloadFilesStore = useDownloadFilesStore()
 const { sendData } = store
-const { peerId, peer, connectionMap } = storeToRefs(store)
-// const loading = ref(false)
-const fileList = ref<UploadRawFile[]>([])
+const { peerId, connectionMap } = storeToRefs(store)
+const { downloadFiles } = storeToRefs(downloadFilesStore)
+const connectionKeyOpt = computed(() => {
+  const res = [...connectionMap.value.keys()].map((item) => ({ value: item, label: item }))
+  return res.length ? res : []
+})
+const fileList = ref<UploadUserFile[]>([])
+const selPid = ref('')
 const upload = async (opt: UploadRequestOptions) => {
   try {
     console.log('opt:', opt, fileList.value)
-    await sendData('', {})
+    if (!selPid.value) {
+      ElMessage.warning('Please select a connection')
+      fileList.value = []
+      return
+    }
+
+    const file = opt.file
+    const blob = new Blob([file], { type: file.type })
+    await sendData(selPid.value, {
+      dataType: DataType.FILE,
+      file: blob,
+      fileName: file.name,
+      fileType: file.type,
+      size: file.size,
+      id: Date.now().toString(),
+      from: selPid.value,
+    })
     opt.onSuccess('success')
   } catch (error) {
     console.error('error:', error)
@@ -60,7 +112,7 @@ const upload = async (opt: UploadRequestOptions) => {
 
 const handleUploadSuccess = (res: any, ...obj) => {
   console.log('res:', res, obj)
+  fileList.value = []
   ElMessage.success('Upload success')
 }
-console.log('fileList:', fileList)
 </script>
