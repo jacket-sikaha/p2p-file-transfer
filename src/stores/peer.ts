@@ -1,20 +1,21 @@
-import { handleQRCode } from '@/utils'
-import { ElMessage } from 'element-plus'
 import type { DataConnection, PeerError, PeerErrorType } from 'peerjs'
 import Peer from 'peerjs'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { useDownloadFilesStore } from './file'
 
 export enum DataType {
   FILE = 'FILE',
   OTHER = 'OTHER',
 }
 export interface Data {
+  id: string
   dataType: DataType
   file?: Blob
   fileName?: string
   fileType?: string
   message?: string
+  from: string
 }
 
 export const usePeerStore = defineStore('peer', () => {
@@ -71,6 +72,8 @@ export const usePeerStore = defineStore('peer', () => {
           console.log('Connect to: ' + id)
           connectionMap.set(id, conn)
           peer?.removeListener('error', handlePeerError)
+          // 自己主动连接，需要自己订阅连接状态变化
+          subscriptionConnectionStatusChanges(id)
         })
         .on('error', function (err) {
           peer?.removeListener('error', handlePeerError)
@@ -110,6 +113,7 @@ export const usePeerStore = defineStore('peer', () => {
       conn.on('close', function () {
         console.log('Connection closed: ' + id)
         connectionMap.delete(id)
+
         callback()
       })
     }
@@ -146,25 +150,27 @@ export const usePeerStore = defineStore('peer', () => {
     }
   }
 
+  const subscriptionConnectionStatusChanges = (peerId: string) => {
+    onConnectionDisconnected(peerId, () => {
+      ElMessage.info('Connection closed: ' + peerId)
+    })
+    onConnectionReceiveData(peerId, (file) => {
+      const { handleReceiveData } = useDownloadFilesStore()
+      handleReceiveData(file)
+      ElMessage.info('Receiving file ' + file.fileName)
+    })
+  }
   const startPeer = async () => {
     try {
       await closePeerSession()
       const myId = await startPeerSession()
+      // 被动连接，也需要订阅这个新连接状态变化
       onIncomingConnection((conn) => {
         const peerId = conn.peer
-        // dispatch(addConnectionList(peerId))
-        onConnectionDisconnected(peerId, () => {
-          ElMessage.info('Connection closed: ' + peerId)
-          // dispatch(removeConnectionList(peerId))
-        })
-        onConnectionReceiveData(peerId, (file) => {
-          ElMessage.info('Receiving file ' + file.fileName + ' from ' + peerId)
-          if (file.dataType === DataType.FILE) {
-            // download(file.file || '', file.fileName || "fileName", file.fileType)
-          }
-        })
+        subscriptionConnectionStatusChanges(peerId)
       })
     } catch (err) {
+      console.error('err:', err)
       ElMessage.error('Failed to initialize peer connection')
     }
   }
