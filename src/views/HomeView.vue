@@ -69,11 +69,13 @@ onMounted(async () => {
   ElMessage.success('onMounted')
   loading.value = true
   await startPeer()
-  img.value = (await toQRCodeDataURL(shareLink.value)) as unknown as string
   loading.value = false
   if (route.query.id) {
     connectPeer(route.query.id as string)
   }
+  toQRCodeDataURL(shareLink.value).then((res) => {
+    img.value = res as unknown as string
+  })
   router.replace({
     query: {},
   })

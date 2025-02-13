@@ -53,8 +53,14 @@
             <p className="text-sm text-[#a1a1aa]">{{ formatBytes(item.size ?? 0) }}</p>
             <p className="text-sm text-[#a1a1aa]">from {{ item.from }}</p>
           </div>
-          <el-button type="primary"
-            ><el-icon><Download /></el-icon
+          <el-button
+            type="primary"
+            @click="
+              () =>
+                item.file && downloadBlob(item.file as Uint8Array, item.fileType!, item.fileName)
+            "
+          >
+            <el-icon><Download /></el-icon
           ></el-button>
         </div>
       </div>
@@ -65,16 +71,16 @@
 <script setup lang="ts">
 import { useDownloadFilesStore } from '@/stores/file'
 import { DataType, usePeerStore } from '@/stores/peer'
-import { formatBytes } from '@/utils'
+import { downloadBlob, formatBytes } from '@/utils'
 import { UploadFilled } from '@element-plus/icons-vue'
 import { type UploadRequestOptions, type UploadUserFile } from 'element-plus'
 import { UploadAjaxError } from 'element-plus/es/components/upload/src/ajax.mjs'
 import { storeToRefs } from 'pinia'
-import { computed, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 
 const store = usePeerStore()
 const downloadFilesStore = useDownloadFilesStore()
-const { sendData } = store
+const { sendData, sendCloseACK } = store
 const { peerId, connectionMap } = storeToRefs(store)
 const { downloadFiles } = storeToRefs(downloadFilesStore)
 const connectionKeyOpt = computed(() => {
@@ -115,4 +121,15 @@ const handleUploadSuccess = (res: any, ...obj) => {
   fileList.value = []
   ElMessage.success('Upload success')
 }
+// const handlebeforeunload = async (e) => {
+//   await sendCloseACK(selPid.value)
+//   e.preventDefault()
+// }
+// onMounted(() => {
+//   window.addEventListener('beforeunload', handlebeforeunload)
+// })
+
+// onUnmounted(() => {
+//   window.removeEventListener('beforeunload', handlebeforeunload)
+// })
 </script>

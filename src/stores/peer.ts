@@ -7,11 +7,12 @@ import { useDownloadFilesStore } from './file'
 export enum DataType {
   FILE = 'FILE',
   OTHER = 'OTHER',
+  CLOSE = 0,
 }
 export interface Data {
   id: string
   dataType: DataType
-  file?: Blob
+  file?: Blob | Uint8Array
   fileName?: string
   fileType?: string
   size?: number
@@ -46,13 +47,10 @@ export const usePeerStore = defineStore('peer', () => {
       }
     })
 
-  const closePeerSession = async () => {
+  const closePeerSession = () => {
     try {
       console.log('closePeerSession---------------------')
       if (p.value) {
-        cmap.value.values().forEach((conn) => {
-          conn.close()
-        })
         p.value.destroy()
         p.value = undefined
       }
@@ -138,6 +136,22 @@ export const usePeerStore = defineStore('peer', () => {
       }
       resolve(id)
     })
+
+  const sendCloseACK = (id: string) =>
+    new Promise((resolve, reject) => {
+      if (!connectionMap.has(id)) {
+        reject(new Error("Connection didn't exist"))
+      }
+      try {
+        const conn = connectionMap.get(id)
+        if (conn) {
+          conn.send({ id, dataType: DataType.CLOSE, message: 'close' })
+        }
+      } catch (err) {
+        reject(err)
+      }
+      resolve(id)
+    })
   const onConnectionReceiveData = (id: string, callback: (f: Data) => void) => {
     if (!p.value) {
       throw new Error("Peer doesn't start yet")
@@ -162,7 +176,9 @@ export const usePeerStore = defineStore('peer', () => {
     onConnectionReceiveData(peerId, (file) => {
       const { handleReceiveData } = useDownloadFilesStore()
       handleReceiveData(file)
-      ElMessage.info('Receiving file ' + file.fileName)
+      if (file.dataType === DataType.CLOSE) {
+        ElMessage.info(file.message)
+      }
     })
   }
   const startPeer = async () => {
@@ -187,6 +203,7 @@ export const usePeerStore = defineStore('peer', () => {
     closePeerSession,
     connectPeer,
     sendData,
+    sendCloseACK,
     startPeer,
   }
 })
