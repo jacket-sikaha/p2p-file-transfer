@@ -8,11 +8,12 @@ export const handleQRCode = () => {
 }
 
 /**
- * 触发文件下载（针对 Blob 类型）
- * @param blob Blob 数据
- * @param filename 完整的文件名（必须包含后缀，如 "file.pdf"）
+ * 触发文件下载
+ * @param Uint8Array File 数据
+ * @param type 完整的文件类型（必须包含后缀，如 "file.pdf"）
  */
-export function downloadBlob(blob: Blob, filename: string): void {
+export function downloadBlob(file: Uint8Array, type: string, filename?: string): void {
+  const blob = new Blob([file], { type })
   // 创建一个隐藏的 <a> 元素
   const link = document.createElement('a')
   link.style.display = 'none'
@@ -23,16 +24,14 @@ export function downloadBlob(blob: Blob, filename: string): void {
 
   // 设置下载属性（使用传入的完整文件名）
   link.href = url
-  link.download = filename
+  link.download = filename ?? Date.now().toString()
 
   // 模拟点击触发下载
   link.click()
 
   // 清理生成的 Object URL（延迟确保下载触发）
-  setTimeout(() => {
-    URL.revokeObjectURL(url)
-    document.body.removeChild(link)
-  }, 100)
+  URL.revokeObjectURL(url)
+  document.body.removeChild(link)
 }
 
 export const toQRCodeDataURL = async (text: string) => {
