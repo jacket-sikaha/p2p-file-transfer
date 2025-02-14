@@ -3,6 +3,7 @@
     :default-active="activeIndex"
     class="el-menu-demo text-xl flex justify-between items-center"
     mode="horizontal"
+    :ellipsis="false"
     @select="handleSelect"
   >
     <div class="flex">
@@ -12,10 +13,13 @@
 
       <RouterLink to="/about"><el-menu-item index="2">file </el-menu-item></RouterLink>
     </div>
-    <div class="m-3 text-base">
-      <span class="font-bold">Id: </span>
-      <span> {{ peer?.id }}</span>
-    </div>
+    <el-popover title="ID" :width="200" trigger="hover" :content="peer?.id">
+      <template #reference>
+        <div class="m-3">
+          <el-avatar> {{ peer?.id.slice(0, 1) }} </el-avatar>
+        </div>
+      </template>
+    </el-popover>
   </el-menu>
   <!-- 每次路由切换时，Vue 会销毁旧组件并创建新组件，因此 onMounted 会重新执行。 -->
   <!-- 在路由切换时避免重复执行 onMounted，使用 keep-alive,可以缓存组件实例，避免重复挂载和卸载 -->

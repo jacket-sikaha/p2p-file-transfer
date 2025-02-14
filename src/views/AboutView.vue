@@ -1,6 +1,6 @@
 <template>
   <div class="flex flex-col gap-2 items-center">
-    <el-card class="w-full" style="max-width: 40rem">
+    <el-card class="w-full" style="max-width: 35rem">
       <template #header>
         <div class="card-header">
           <span class="font-bold text-lg">选择发送方</span>
@@ -15,26 +15,26 @@
           :value="item.value"
         />
       </el-select>
+
+      <el-upload
+        class="w-full max-w-72 mx-auto mt-2"
+        drag
+        multiple
+        ref="uploadRef"
+        v-model:file-list="fileList"
+        :http-request="upload"
+        :limit="3"
+        :on-success="handleUploadSuccess"
+      >
+        <el-icon class="el-icon--upload"><upload-filled /></el-icon>
+        <div class="el-upload__text">Drop file here or <em>click to upload</em></div>
+        <template #tip>
+          <div class="el-upload__tip">文件上传个数限制为3,提交即自动上传</div>
+        </template>
+      </el-upload>
     </el-card>
 
-    <el-upload
-      class="w-full max-w-72"
-      drag
-      multiple
-      ref="uploadRef"
-      v-model:file-list="fileList"
-      :http-request="upload"
-      :limit="3"
-      :on-success="handleUploadSuccess"
-    >
-      <el-icon class="el-icon--upload"><upload-filled /></el-icon>
-      <div class="el-upload__text">Drop file here or <em>click to upload</em></div>
-      <template #tip>
-        <div class="el-upload__tip">文件上传个数限制为3,提交即自动上传</div>
-      </template>
-    </el-upload>
-    {{ fileList }}
-    <el-card class="w-full" style="max-width: 40rem">
+    <el-card class="w-full" style="max-width: 35rem">
       <template #header>
         <div class="card-header">
           <span class="font-bold text-lg">ReceiveData</span>

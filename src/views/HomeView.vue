@@ -66,7 +66,6 @@ const connectionKey = computed(() => {
 })
 
 onMounted(async () => {
-  ElMessage.success('onMounted')
   loading.value = true
   await startPeer()
   loading.value = false
