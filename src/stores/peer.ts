@@ -180,6 +180,30 @@ export const usePeerStore = defineStore('peer', () => {
         ElMessage.info(file.message)
       }
     })
+    // 更细粒度地反映底层 ICE 协议的状态
+    // 直接关闭浏览器并不能触发 DataConnection的 onClose 事件，导致一直显示死连接问题
+    connectionMap.get(peerId)?.on('iceStateChanged', (state) => {
+      console.log('当前 ICE 状态:', state)
+
+      switch (state) {
+        case 'connected':
+          console.log('P2P 连接成功！')
+          break
+        case 'disconnected': {
+          // 如果对方直接关闭浏览器，在线的一方设备会触发如下逻辑
+          // 更新页面连接设备状态列表，而不是一直显示死连接
+          console.warn('连接断开，尝试恢复...')
+          connectionMap.delete(peerId)
+          break
+        }
+        case 'failed':
+          console.error('连接失败，请检查网络或使用 TURN 服务器')
+          break
+        case 'closed':
+          console.log('连接已关闭')
+          break
+      }
+    })
   }
   const startPeer = async () => {
     try {

@@ -76,7 +76,7 @@ import { UploadFilled } from '@element-plus/icons-vue'
 import { type UploadRequestOptions, type UploadUserFile } from 'element-plus'
 import { UploadAjaxError } from 'element-plus/es/components/upload/src/ajax.mjs'
 import { storeToRefs } from 'pinia'
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 
 const store = usePeerStore()
 const downloadFilesStore = useDownloadFilesStore()

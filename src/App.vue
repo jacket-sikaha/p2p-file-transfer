@@ -8,10 +8,10 @@
   >
     <div class="flex">
       <RouterLink to="/"
-        ><el-menu-item class="text-xl" index="1">connection</el-menu-item></RouterLink
+        ><el-menu-item class="text-xl" index="1">Connection</el-menu-item></RouterLink
       >
 
-      <RouterLink to="/about"><el-menu-item index="2">file </el-menu-item></RouterLink>
+      <RouterLink to="/about"><el-menu-item index="2">File </el-menu-item></RouterLink>
     </div>
     <el-popover title="ID" :width="200" trigger="hover" :content="peer?.id">
       <template #reference>
