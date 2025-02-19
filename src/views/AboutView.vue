@@ -81,7 +81,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 const store = usePeerStore()
 const downloadFilesStore = useDownloadFilesStore()
 const { sendData, sendCloseACK } = store
-const { peerId, connectionMap } = storeToRefs(store)
+const { peer, peerId, connectionMap } = storeToRefs(store)
 const { downloadFiles } = storeToRefs(downloadFilesStore)
 const connectionKeyOpt = computed(() => {
   const res = [...connectionMap.value.keys()].map((item) => ({ value: item, label: item }))
@@ -91,7 +91,6 @@ const fileList = ref<UploadUserFile[]>([])
 const selPid = ref('')
 const upload = async (opt: UploadRequestOptions) => {
   try {
-    console.log('opt:', opt, fileList.value)
     if (!selPid.value) {
       ElMessage.warning('Please select a connection')
       fileList.value = []
@@ -116,8 +115,7 @@ const upload = async (opt: UploadRequestOptions) => {
   }
 }
 
-const handleUploadSuccess = (res: any, ...obj) => {
-  console.log('res:', res, obj)
+const handleUploadSuccess = () => {
   fileList.value = []
   ElMessage.success('Upload success')
 }

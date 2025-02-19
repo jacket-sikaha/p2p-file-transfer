@@ -1,4 +1,4 @@
-import { toDataURL } from 'qrcode'
+import { toDataURL, type QRCodeToDataURLOptions } from 'qrcode'
 import { useRoute } from 'vue-router'
 
 export const handleQRCode = () => {
@@ -35,14 +35,12 @@ export function downloadBlob(file: Uint8Array, type: string, filename?: string):
 }
 
 export const toQRCodeDataURL = async (text: string) => {
-  const opts = {
+  const opts: QRCodeToDataURLOptions = {
     errorCorrectionLevel: 'H',
     type: 'image/jpeg',
-    quality: 0.3,
     margin: 1,
   }
   const canvas = document.createElement('canvas')
-
   return await toDataURL(canvas, text, opts)
 }
 
