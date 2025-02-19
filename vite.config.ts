@@ -1,12 +1,13 @@
 import { fileURLToPath, URL } from 'node:url'
 
-import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueJsx from '@vitejs/plugin-vue-jsx'
-import vueDevTools from 'vite-plugin-vue-devtools'
 import AutoImport from 'unplugin-auto-import/vite'
-import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
+import Components from 'unplugin-vue-components/vite'
+import { defineConfig } from 'vite'
+import vueDevTools from 'vite-plugin-vue-devtools'
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
@@ -24,5 +25,23 @@ export default defineConfig({
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        // manualChunks(id) {
+        //   if (id.includes('pinia')) {
+        //     return 'vendor'
+        //   }
+        //   if (id.includes('/src/stores')) {
+        //     return 'stores'
+        //   }
+        // },
+        manualChunks: {
+          pinia: ['pinia'],
+        },
+      },
+    },
+    // minify: false,
   },
 })
