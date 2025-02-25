@@ -1,39 +1,23 @@
-# .
+# p2p-file-transfer
 
-This template should help get you started developing with Vue 3 in Vite.
+本项目是基于peerjs实现文件实时传输
 
-## Recommended IDE Setup
+### 链接
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+[p2p-file-transfer.pages.dev/](p2p-file-transfer.pages.dev/)
 
-## Type Support for `.vue` Imports in TS
+### 使用步骤
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
+某一方打开页面，通过share link或者二维码获取链接，打开另一方页面，会自动通过链接上的id（有的话）进行连接，即可进行文件传输
 
-## Customize configuration
+### 注意事项
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+1. 支持度有限：国产手机浏览器貌似对webrtc不太支持，我测试下来chrome，safari，via都支持
+2. 双方连接之后，手机浏览器挂后台可能存在系统杀后台情况，因此双方连接是有可能断开的
+3. 连接在同一个网段下的设备和一方有适合的nat环境穿透成功率最高：项目基本依赖stun服务器建立连接，受限于没有好的免费的turn服务器选择，p2p不能做到双方任意网段100%穿透成功（如果要尽可能实现100%穿透，需要自己搭建turn服务器）
+4. 带宽问题：对于100m以下文件使用体验会好点，以上100m以上文件传输速度会比较慢，因为webrtc基于是基于丢包的带宽评估，比如你家里的带宽是8M，WebRTC最开始是不知道你家里的真实带宽的，它必须一点点测量，所以一开始它先给你的带宽设置一个假设值，即500K，当发现丢包率很低时，它再增加带宽的评估值，如从500K升到1兆，如果丢包率还是很低，就会加到1.5兆、2兆……，带宽评估值增加的速度是每次增加8%；如果丢包率>10%，说明发生拥塞了，此时应该立即降低带宽。因此100m以上文件传输时，丢包率低的话，带宽是会在传输过程中逐渐增加的
+5. 为什么同一个网段拉不满带宽：因为WebRTC为保障网络质量，在内部通过多种机制，各种缓冲，来做到的。所以它必然会产生一定的延迟，也就是拿延迟换质量。而在局域网内，网络基本没有延时，不丢包、不抖动、不乱序。这时什么策略都不采用，网络的传输才是最快的
 
-## Project Setup
+### WebRTC深度分析
 
-```sh
-pnpm install
-```
-
-### Compile and Hot-Reload for Development
-
-```sh
-pnpm dev
-```
-
-### Type-Check, Compile and Minify for Production
-
-```sh
-pnpm build
-```
-
-### Lint with [ESLint](https://eslint.org/)
-
-```sh
-pnpm lint
-```
+[https://zhuanlan.zhihu.com/p/399238398](https://zhuanlan.zhihu.com/p/399238398)
